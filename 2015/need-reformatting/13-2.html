@@ -1,0 +1,165 @@
+<script>
+var inputs = [
+"Alice would gain 54 happiness units by sitting next to Bob.",
+"Alice would lose 79 happiness units by sitting next to Carol.",
+"Alice would lose 2 happiness units by sitting next to David.",
+"Bob would gain 83 happiness units by sitting next to Alice.",
+"Bob would lose 7 happiness units by sitting next to Carol.",
+"Bob would lose 63 happiness units by sitting next to David.",
+"Carol would lose 62 happiness units by sitting next to Alice.",
+"Carol would gain 60 happiness units by sitting next to Bob.",
+"Carol would gain 55 happiness units by sitting next to David.",
+"David would gain 46 happiness units by sitting next to Alice.",
+"David would lose 7 happiness units by sitting next to Bob.",
+"David would gain 41 happiness units by sitting next to Carol."
+];
+
+var inputs = [
+"Alice would gain 54 happiness units by sitting next to Bob.",
+"Alice would lose 81 happiness units by sitting next to Carol.",
+"Alice would lose 42 happiness units by sitting next to David.",
+"Alice would gain 89 happiness units by sitting next to Eric.",
+"Alice would lose 89 happiness units by sitting next to Frank.",
+"Alice would gain 97 happiness units by sitting next to George.",
+"Alice would lose 94 happiness units by sitting next to Mallory.",
+"Bob would gain 3 happiness units by sitting next to Alice.",
+"Bob would lose 70 happiness units by sitting next to Carol.",
+"Bob would lose 31 happiness units by sitting next to David.",
+"Bob would gain 72 happiness units by sitting next to Eric.",
+"Bob would lose 25 happiness units by sitting next to Frank.",
+"Bob would lose 95 happiness units by sitting next to George.",
+"Bob would gain 11 happiness units by sitting next to Mallory.",
+"Carol would lose 83 happiness units by sitting next to Alice.",
+"Carol would gain 8 happiness units by sitting next to Bob.",
+"Carol would gain 35 happiness units by sitting next to David.",
+"Carol would gain 10 happiness units by sitting next to Eric.",
+"Carol would gain 61 happiness units by sitting next to Frank.",
+"Carol would gain 10 happiness units by sitting next to George.",
+"Carol would gain 29 happiness units by sitting next to Mallory.",
+"David would gain 67 happiness units by sitting next to Alice.",
+"David would gain 25 happiness units by sitting next to Bob.",
+"David would gain 48 happiness units by sitting next to Carol.",
+"David would lose 65 happiness units by sitting next to Eric.",
+"David would gain 8 happiness units by sitting next to Frank.",
+"David would gain 84 happiness units by sitting next to George.",
+"David would gain 9 happiness units by sitting next to Mallory.",
+"Eric would lose 51 happiness units by sitting next to Alice.",
+"Eric would lose 39 happiness units by sitting next to Bob.",
+"Eric would gain 84 happiness units by sitting next to Carol.",
+"Eric would lose 98 happiness units by sitting next to David.",
+"Eric would lose 20 happiness units by sitting next to Frank.",
+"Eric would lose 6 happiness units by sitting next to George.",
+"Eric would gain 60 happiness units by sitting next to Mallory.",
+"Frank would gain 51 happiness units by sitting next to Alice.",
+"Frank would gain 79 happiness units by sitting next to Bob.",
+"Frank would gain 88 happiness units by sitting next to Carol.",
+"Frank would gain 33 happiness units by sitting next to David.",
+"Frank would gain 43 happiness units by sitting next to Eric.",
+"Frank would gain 77 happiness units by sitting next to George.",
+"Frank would lose 3 happiness units by sitting next to Mallory.",
+"George would lose 14 happiness units by sitting next to Alice.",
+"George would lose 12 happiness units by sitting next to Bob.",
+"George would lose 52 happiness units by sitting next to Carol.",
+"George would gain 14 happiness units by sitting next to David.",
+"George would lose 62 happiness units by sitting next to Eric.",
+"George would lose 18 happiness units by sitting next to Frank.",
+"George would lose 17 happiness units by sitting next to Mallory.",
+"Mallory would lose 36 happiness units by sitting next to Alice.",
+"Mallory would gain 76 happiness units by sitting next to Bob.",
+"Mallory would lose 34 happiness units by sitting next to Carol.",
+"Mallory would gain 37 happiness units by sitting next to David.",
+"Mallory would gain 40 happiness units by sitting next to Eric.",
+"Mallory would gain 18 happiness units by sitting next to Frank.",
+"Mallory would gain 7 happiness units by sitting next to George.",
+"Robert would gain 0 happiness units by sitting next to George.",
+"Robert would gain 0 happiness units by sitting next to Alice.",
+"Robert would gain 0 happiness units by sitting next to Bob.",
+"Robert would gain 0 happiness units by sitting next to Carol.",
+"Robert would gain 0 happiness units by sitting next to David.",
+"Robert would gain 0 happiness units by sitting next to Eric.",
+"Robert would gain 0 happiness units by sitting next to Frank.",
+"Robert would gain 0 happiness units by sitting next to George.",
+"Robert would gain 0 happiness units by sitting next to Mallory.",
+"George would gain 0 happiness units by sitting next to Robert.",
+"Alice would gain 0 happiness units by sitting next to Robert.",
+"Bob would gain 0 happiness units by sitting next to Robert.",
+"Carol would gain 0 happiness units by sitting next to Robert.",
+"David would gain 0 happiness units by sitting next to Robert.",
+"Eric would gain 0 happiness units by sitting next to Robert.",
+"Frank would gain 0 happiness units by sitting next to Robert.",
+"George would gain 0 happiness units by sitting next to Robert.",
+"Mallory would gain 0 happiness units by sitting next to Robert.",
+]
+
+var mappings = {};
+
+inputs.forEach(function(input){
+    var segments = input.split(" ");
+
+    var name = segments[0];
+    var direction = segments[2];
+    var value = parseInt(segments[3]);
+    var person = segments[10].slice(0,-1);
+
+    if(typeof(mappings[name]) == 'undefined'){
+        mappings[name] = {}
+    }
+    
+    mappings[name][person] = {
+        direction: direction,
+        value: value
+    }
+});
+
+console.log(mappings);
+
+var seating = {};
+var order = [];
+
+function assignSeatings(person, people){
+    Object.keys(mappings).forEach(function(mapNextPerson){
+        if(!people.includes(mapNextPerson) && people.length < Object.keys(mappings).length){
+            assignSeatings(mapNextPerson, people.concat([mapNextPerson]));
+        }
+    })
+
+    if(people.length == Object.keys(mappings).length){
+        order.push(people);
+    }
+}
+
+Object.keys(mappings).forEach(function(person){
+    assignSeatings(person, [ person ]);
+})
+
+var totals = [];
+Object.keys(order).forEach(function(key){
+    var totalPts = 0;
+    var seats = order[key];
+    for(i = 0; i < seats.length; i++){
+        if(i == 0){
+            var map = mappings[seats[i]][seats[seats.length-1]];
+            totalPts += (map.direction == 'gain' ? map.value : -map.value);
+        }
+        if(i > 0){
+            var map = mappings[seats[i]][seats[i-1]];
+            totalPts += (map.direction == 'gain' ? map.value : -map.value);
+        }
+        if(i < seats.length - 1){
+            var map = mappings[seats[i]][seats[i+1]];
+            totalPts += (map.direction == 'gain' ? map.value : -map.value);
+        }
+        if(i == seats.length - 1){
+            var map = mappings[seats[i]][seats[0]];
+            totalPts += (map.direction == 'gain' ? map.value : -map.value);
+        }
+    }
+    totals.push(totalPts);
+})
+
+totals = totals.sort(function(a, b){
+    return b-a;
+})
+console.log(totals);
+
+</script>

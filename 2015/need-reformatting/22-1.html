@@ -1,0 +1,196 @@
+<script>
+//console.log('22');
+
+spells = {
+    MagicMissile: {
+        cost: 53,
+        amt: 4,
+        types: ['instant', 'offensive']
+    },
+    Drain: {
+        cost: 72,
+        amt: 2,
+        types: ['instant', 'offensive', 'hpRestore']
+    },
+    Shield: {
+        cost: 113,
+        amt: 3,
+        lasts: 7,
+        types: ['effect', 'defensive'],
+    },
+    Poison: {
+        cost: 173,
+        amt: 3,
+        lasts: 6,
+        types: ['effect', 'offensive'],
+    },
+    Recharge: {
+        cost: 229,
+        amt: 101,
+        lasts: 5,
+        types: ['effect', 'mpRestore']
+    }
+}
+
+var bossStats = {
+    hp: 59,
+    damage: 9
+}
+
+var playerStats = {
+    hp: 100,
+    mp: 500,
+    defense: 0
+}
+
+//console.log(spells);
+
+var timer = {};
+var manaCost = 0;
+
+function cast(spell, player, boss, timer) {
+    console.log('Casting', spell);
+    var spellData = spells[spell];
+
+    if(player.mp < spellData.cost){
+        return false;
+    } else {
+        ////console.log('spending', spellData.cost);
+        player.mp -= spellData.cost;
+        manaCost -= spellData.cost;
+    }
+
+    var isInstant = spellData.types.includes('instant');
+    var isEffect = spellData.types.includes('effect');
+    var isOffensive = spellData.types.includes('offensive');
+    var isHpRestorative = spellData.types.includes('hpRestore');
+    var isDefensive = spellData.types.includes('defensive');
+
+    if(isInstant){
+        ////console.log("Instant Spell");
+        
+        if(isOffensive){
+            boss.hp -= spellData.amt;
+        }
+
+        if(isHpRestorative){
+            player.hp += spellData.amt
+        }
+    }
+
+    if(isEffect){
+        ////console.log("Effect Spell");
+        ////console.log("Lasts", spellData.lasts);
+        timer[spell] = spellData.lasts;
+
+        if(isDefensive){
+            ////console.log('player',player);
+            player.defense += spellData.amt;
+        }
+    }
+
+    return {player, boss, timer};
+}
+
+function processEffects(player, boss, timer){
+    if(typeof(timer) != 'undefined'){
+        ////console.log('timer', timer);
+        Object.keys(timer).forEach(function(spell){
+            if(timer[spell] > 0 ){
+                timer[spell]--;
+
+                var spellData = spells[spell];
+                var isOffensive = spellData.types.includes('offensive');
+                var isMpRestorative = spellData.types.includes('mpRestore');
+                var isDefensive = spellData.types.includes('defensive');
+
+                if(isDefensive && timer[spell] == 0){
+                    ////console.log('Defense debuffed')
+                    player.defense -= spellData.amt;
+                }
+
+                if(isOffensive && timer[spell] > 0){
+                    ////console.log('Effect Attack');
+                    boss.hp -= spellData.amt;
+                }
+
+                if(isMpRestorative && timer[spell] > 0){
+                    ////console.log('MP Effect rsetoring', spellData.amt)
+                    player.mp += spellData.amt;
+                }
+            }
+        })
+    }
+
+    return {player, boss, timer};
+}
+
+function bossAttack(player, boss) {
+    player.hp -= boss.damage;
+
+    if(player.hp > 0){
+        return {player, boss, timer};
+    }
+}
+
+var wins = [];
+function battle(playerStats, bossStats, spell, depth = 0){
+    // if(depth > 50){
+    //     return;
+    // }
+
+    var pStats = JSON.parse(JSON.stringify(playerStats)); 
+    var bStats = JSON.parse(JSON.stringify(bossStats)); 
+    var timer = {};
+
+    console.log('playerStats before round', pStats)
+    console.log('BossStats before round', bStats)
+
+    // Player Phase
+    cast(spell, pStats, bStats, timer);
+    processEffects(pStats, bStats, timer);
+
+    if(bStats.hp <= 0){
+        console.log("Boss Killed");
+        //console.log(`\n\n\n${manaCost}\n\n\n`);
+        wins.push(manaCost);
+        return;
+    }
+
+
+    // Boss Phase
+    bossAttack(pStats, bStats);
+
+    if(pStats.hp <= 0){
+        console.log("Player killed");
+        return;
+    }
+
+    console.log('playerStats after round', pStats)
+    console.log('BossStats after round', bStats)
+    //console.log('\n');
+
+    var availableSpells = Object.keys(spells).filter(function(spell){
+        return spells[spell].cost < pStats.mp && spell !== 'Recharge';
+    })
+
+    availableSpells.forEach(function(spell){
+        if(pStats.mp - spells[spell].cost < spells['Recharge'].cost && timer['Recharge'] <= 0 && typeof(timer['Recharge']) == 'undefined'){
+            battle(pStats, bStats, 'Recharge', depth + 1)
+        } else if (timer[spell] <= 0 || typeof(timer[spell]) == 'undefined') {
+            battle(pStats, bStats, spell, depth +1)
+        }
+    })
+}
+
+//battle(playerStats, bossStats, Object.keys(spells)[0]);
+
+Object.keys(spells).forEach(function(spell){
+    if(spell !== 'Recharge'){
+        battle(playerStats, bossStats, spell);
+    }
+})
+
+console.log(wins.sort(function(a,b){return a - b}));
+
+</script>

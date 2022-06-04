@@ -1,0 +1,78 @@
+<script>
+var ingredients = [
+"Sprinkles: capacity 5, durability -1, flavor 0, texture 0, calories 5",
+"PeanutButter: capacity -1, durability 3, flavor 0, texture 0, calories 1",
+"Frosting: capacity 0, durability -1, flavor 4, texture 0, calories 6",
+"Sugar: capacity -1, durability 0, flavor 0, texture 2, calories 8",
+];
+
+
+var mapIngredients = {}
+
+ingredients.forEach(function(ingredient){
+    var words = ingredient.split(" ");
+    var type = words[0].slice(0,-1);
+    var properties = {
+        capacity: parseInt(words[2]),
+        durability: parseInt(words[4]),
+        flavor: parseInt(words[6]),
+        texture: parseInt(words[8]),
+        calories: parseInt(words[10])
+    }
+
+    mapIngredients[type] = properties;
+})
+
+var combos = [];
+function getCombos(currentValues = [0], maxDepth = 2, val){
+    for(var i = 1; i < 100; i++){
+        if(currentValues.reduce(function(prev, next){return prev + next}) == val && currentValues.length == maxDepth){
+            combos.push(currentValues);
+        }
+        if(currentValues.length < maxDepth){
+            getCombos(currentValues.concat([i]), maxDepth, val);
+        }
+    }
+}
+
+getCombos([0], Object.keys(mapIngredients).length + 1, 100)
+
+var cookies = [];
+combos.forEach(function(combo){
+    var cookieScore = {};
+    var scoring = [];
+
+    combo = combo.filter(function(item){
+        return item != 0;
+    })
+
+
+    var score = {
+        capacity: 0,
+        durability: 0,
+        flavor: 0,
+        texture: 0,
+    }
+    combo.forEach(function(amt, key){
+        mapping = mapIngredients[Object.keys(mapIngredients)[key]];
+        score.capacity += mapping.capacity * amt;
+        score.durability += mapping.durability * amt;
+        score.flavor += mapping.flavor * amt;
+        score.texture += mapping.texture * amt;
+    })
+
+    var finalScore = {
+        mapping: mapIngredients,
+        combo: combo,
+        score: score,
+        finalScore: Math.max(0,score.capacity) * Math.max(0,score.durability) * Math.max(0,score.flavor) * Math.max(0,score.texture)
+    };
+    cookies.push(finalScore);
+})
+
+cookies = cookies.sort(function(a,b){
+    return b.finalScore - a.finalScore;
+})
+
+console.log(cookies[0]);
+</script>
